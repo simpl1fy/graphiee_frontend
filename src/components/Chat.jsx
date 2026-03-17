@@ -16,6 +16,22 @@ import {
 } from "chart.js";
 
 import { Bar, Line, Pie } from "react-chartjs-2";
+import { Chart } from "react-chartjs-2";
+import { MatrixController, MatrixElement } from "chartjs-chart-matrix";
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  LineElement,
+  ArcElement,
+  PointElement,
+  Title,
+  Tooltip,
+  Legend,
+  MatrixController,
+  MatrixElement
+);
 
 ChartJS.register(
   CategoryScale,
@@ -317,108 +333,173 @@ export default function Chat() {
                   {/* Bulletproof Data Renderer */}
                   {m.data && (
                     <div className="mt-4 w-full overflow-hidden">
-                      
+
                       {/* CASE 1: 0 Rows Returned */}
                       {m.data.length === 0 ? (
                         <div className="p-3 bg-gray-50 border border-gray-200 rounded text-sm text-gray-500 italic">
                           Query executed successfully, but returned 0 rows.
                         </div>
-                      ) : 
-                      
-                      /* CASE 2: Single "Normal Value" (1 Row, 1 Column) */
-                      m.data.length === 1 && Object.keys(m.data[0]).length === 1 ? (
-                        <div className="bg-blue-50 border border-blue-200 text-blue-800 px-6 py-4 rounded-xl shadow-sm w-fit">
-                          <p className="text-xs text-blue-600 font-semibold uppercase tracking-wider mb-1">
-                            {Object.keys(m.data[0])[0]}
-                          </p>
-                          <p className="text-3xl font-bold">
-                            {Object.values(m.data[0])[0] !== null ? String(Object.values(m.data[0])[0]) : "N/A"}
-                          </p>
-                        </div>
-                      ) : 
-                      
-                      /* CASE 3: Multi-Row/Column - Render Chart or Table */
-                      (
-                        <div className="w-full">
-                          {/* Charts (Only render if labels actually exist) */}
-                          {m.chartType === "bar" && m.chart?.labels?.length > 0 && (
-                            <Bar data={{
-                              labels: m.chart.labels,
-                              datasets: [{ label: "Result", data: m.chart.values, backgroundColor: "rgba(59,130,246,0.7)" }]
-                            }} options={{ responsive: true }} />
-                          )}
+                      ) :
 
-                          {m.chartType === "line" && m.chart?.labels?.length > 0 && (
-                            <Line data={{
-                              labels: m.chart.labels,
-                              datasets: [{ label: "Result", data: m.chart.values, borderColor: "rgba(59,130,246,1)" }]
-                            }} options={{ responsive: true }} />
-                          )}
+                        /* CASE 2: Single "Normal Value" (1 Row, 1 Column) */
+                        m.data.length === 1 && Object.keys(m.data[0]).length === 1 ? (
+                          <div className="bg-blue-50 border border-blue-200 text-blue-800 px-6 py-4 rounded-xl shadow-sm w-fit">
+                            <p className="text-xs text-blue-600 font-semibold uppercase tracking-wider mb-1">
+                              {Object.keys(m.data[0])[0]}
+                            </p>
+                            <p className="text-3xl font-bold">
+                              {Object.values(m.data[0])[0] !== null ? String(Object.values(m.data[0])[0]) : "N/A"}
+                            </p>
+                          </div>
+                        ) :
 
-                          {m.chartType === "pie" && m.chart?.labels?.length > 0 && (
-                            <Pie data={{
-                              labels: m.chart.labels,
-                              datasets: [{ 
-                                data: m.chart.values,
-                                // Added a predefined color palette for the pie chart so segments are distinct
-                                backgroundColor: [
-                                  'rgba(255, 99, 132, 0.7)',
-                                  'rgba(54, 162, 235, 0.7)',
-                                  'rgba(255, 206, 86, 0.7)',
-                                  'rgba(75, 192, 192, 0.7)',
-                                  'rgba(153, 102, 255, 0.7)',
-                                  'rgba(255, 159, 64, 0.7)',
-                                  'rgba(199, 199, 199, 0.7)',
-                                  'rgba(255, 99, 255, 0.7)',
-                                  'rgba(99, 255, 132, 0.7)',
-                                  'rgba(255, 159, 164, 0.7)'
-                                ],
-                                borderColor: [
-                                  'rgba(255, 99, 132, 1)',
-                                  'rgba(54, 162, 235, 1)',
-                                  'rgba(255, 206, 86, 1)',
-                                  'rgba(75, 192, 192, 1)',
-                                  'rgba(153, 102, 255, 1)',
-                                  'rgba(255, 159, 64, 1)',
-                                  'rgba(199, 199, 199, 1)',
-                                  'rgba(255, 99, 255, 1)',
-                                  'rgba(99, 255, 132, 1)',
-                                  'rgba(255, 159, 164, 1)'
-                                ],
-                                borderWidth: 1
-                              }]
-                            }} options={{ responsive: true }} />
-                          )}
+                          /* CASE 3: Multi-Row/Column - Render Chart or Table */
+                          (
+                            <div className="w-full">
+                              {/* Charts (Only render if labels actually exist) */}
+                              <div className="w-full h-72">
+                                {m.chartType === "bar" && m.chart?.labels?.length > 0 && (
+                                  <Bar
+                                    data={{
+                                      labels: m.chart.labels,
+                                      datasets: [{ label: "Result", data: m.chart.values, backgroundColor: "rgba(59,130,246,0.7)" }]
+                                    }}
+                                    options={{ responsive: true, maintainAspectRatio: false }}
+                                  />
+                                )}
 
-                          {/* Table (Renders if requested, OR automatically falls back if a chart fails) */}
-                          {(m.chartType === "table" || !m.chartType || !m.chart?.labels || m.chart.labels.length === 0) && (
-                            <div className="overflow-x-auto w-full border rounded-lg shadow-sm">
-                              <table className="min-w-full divide-y divide-gray-200 text-sm">
-                                <thead className="bg-gray-50">
-                                  <tr>
-                                    {Object.keys(m.data[0]).map((key) => (
-                                      <th key={key} className="px-4 py-3 text-left font-semibold text-gray-700 uppercase tracking-wider whitespace-nowrap">
-                                        {key}
-                                      </th>
-                                    ))}
-                                  </tr>
-                                </thead>
-                                <tbody className="bg-white divide-y divide-gray-200">
-                                  {m.data.map((row, rowIndex) => (
-                                    <tr key={rowIndex} className="hover:bg-gray-50">
-                                      {Object.values(row).map((val, colIndex) => (
-                                        <td key={colIndex} className="px-4 py-2 text-gray-800 whitespace-nowrap">
-                                          {val !== null ? String(val) : "null"}
-                                        </td>
+                                {m.chartType === "line" && m.chart?.labels?.length > 0 && (
+                                  <Line
+                                    data={{
+                                      labels: m.chart.labels,
+                                      datasets: [{ label: "Result", data: m.chart.values, borderColor: "rgba(59,130,246,1)" }]
+                                    }}
+                                    options={{ responsive: true, maintainAspectRatio: false }}
+                                  />
+                                )}
+
+                                {m.chartType === "pie" && m.chart?.labels?.length > 0 && (
+                                  <Pie
+                                    data={{
+                                      labels: m.chart.labels,
+                                      datasets: [{
+                                        data: m.chart.values,
+                                        // Added a predefined color palette for the pie chart so segments are distinct
+                                        backgroundColor: [
+                                          'rgba(255, 99, 132, 0.7)',
+                                          'rgba(54, 162, 235, 0.7)',
+                                          'rgba(255, 206, 86, 0.7)',
+                                          'rgba(75, 192, 192, 0.7)',
+                                          'rgba(153, 102, 255, 0.7)',
+                                          'rgba(255, 159, 64, 0.7)',
+                                          'rgba(199, 199, 199, 0.7)',
+                                          'rgba(255, 99, 255, 0.7)',
+                                          'rgba(99, 255, 132, 0.7)',
+                                          'rgba(255, 159, 164, 0.7)'
+                                        ],
+                                        borderColor: [
+                                          'rgba(255, 99, 132, 1)',
+                                          'rgba(54, 162, 235, 1)',
+                                          'rgba(255, 206, 86, 1)',
+                                          'rgba(75, 192, 192, 1)',
+                                          'rgba(153, 102, 255, 1)',
+                                          'rgba(255, 159, 64, 1)',
+                                          'rgba(199, 199, 199, 1)',
+                                          'rgba(255, 99, 255, 1)',
+                                          'rgba(99, 255, 132, 1)',
+                                          'rgba(255, 159, 164, 1)'
+                                        ],
+                                        borderWidth: 1
+                                      }]
+                                    }}
+                                    options={{ responsive: true, maintainAspectRatio: false }}
+                                  />
+                                )}
+
+                                {m.chartType === "heatmap" && m.data?.length > 0 && (
+                                  <Chart
+                                    type="matrix"
+                                    data={{
+                                      datasets: [
+                                        {
+                                          label: "Heatmap",
+                                          data: m.data.map((row, i) => ({
+                                            x: row.x,
+                                            y: row.y,
+                                            v: row.value
+                                          })),
+                                          backgroundColor: (ctx) => {
+                                            const value = ctx.raw.v;
+                                            const max = Math.max(...m.data.map(d => d.value));
+                                            const alpha = value / max;
+
+                                            return `rgba(59,130,246,${alpha})`; // blue intensity
+                                          },
+                                          width: ({ chart }) =>
+                                            (chart.chartArea || {}).width / m.data.length,
+                                          height: ({ chart }) =>
+                                            (chart.chartArea || {}).height / m.data.length,
+                                        }
+                                      ]
+                                    }}
+                                    options={{
+                                      responsive: true,
+                                      maintainAspectRatio: false,
+                                      scales: {
+                                        x: {
+                                          type: "category",
+                                          labels: [...new Set(m.data.map(d => d.x))]
+                                        },
+                                        y: {
+                                          type: "category",
+                                          labels: [...new Set(m.data.map(d => d.y))]
+                                        }
+                                      },
+                                      plugins: {
+                                        tooltip: {
+                                          callbacks: {
+                                            title: () => "",
+                                            label: (ctx) => {
+                                              const { x, y, v } = ctx.raw;
+                                              return `(${x}, ${y}) → ${v}`;
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }}
+                                  />
+                                )}
+                              </div>
+
+                              {/* Table (Renders if requested, OR automatically falls back if a chart fails) */}
+                              {(m.chartType === "table" || !m.chartType || !m.chart?.labels || m.chart.labels.length === 0) && (
+                                <div className="overflow-x-auto w-full border rounded-lg shadow-sm">
+                                  <table className="min-w-full divide-y divide-gray-200 text-sm">
+                                    <thead className="bg-gray-50">
+                                      <tr>
+                                        {Object.keys(m.data[0]).map((key) => (
+                                          <th key={key} className="px-4 py-3 text-left font-semibold text-gray-700 uppercase tracking-wider whitespace-nowrap">
+                                            {key}
+                                          </th>
+                                        ))}
+                                      </tr>
+                                    </thead>
+                                    <tbody className="bg-white divide-y divide-gray-200">
+                                      {m.data.map((row, rowIndex) => (
+                                        <tr key={rowIndex} className="hover:bg-gray-50">
+                                          {Object.values(row).map((val, colIndex) => (
+                                            <td key={colIndex} className="px-4 py-2 text-gray-800 whitespace-nowrap">
+                                              {val !== null ? String(val) : "null"}
+                                            </td>
+                                          ))}
+                                        </tr>
                                       ))}
-                                    </tr>
-                                  ))}
-                                </tbody>
-                              </table>
+                                    </tbody>
+                                  </table>
+                                </div>
+                              )}
                             </div>
                           )}
-                        </div>
-                      )}
                     </div>
                   )}
                 </div>
